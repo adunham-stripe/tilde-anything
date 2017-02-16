@@ -4,12 +4,12 @@ This is a demonstration of how to build a payments that can process enormous cus
 
 ## Installation
 
-### Step #1: Install External Requirements
+#### Step #1: Install External Requirements
 
 - _Redis_ - `brew install redis`
 - _Socket.io_ - `npm install socketio`
 
-### Step #2: Install Python Requirements
+#### Step #2: Install Python Requirements
 
 `pip install -r requirements.txt`
 
@@ -19,11 +19,11 @@ Ideally, this will be deployable to something like Heroku or Dokku; but I've not
 
 Make sure you have Redis running (it probably already is).
 
-### Step #1: Turn on the Celery Worker Queue
+#### Step #1: Turn on the Celery Worker Queue
 
 `STRIPE_SECRET_KEY=sk_test_xxx celery -A scaledcharges.tasks worker --loglevel=info -E`
 
-### Step #2: Turn on the Web Server
+#### Step #2: Turn on the Web Server
 
 `STRIPE_SECRET_KEY=sk_test_xxx STRIPE_PUBLISHABLE_KEY=pk_test_xxx python run.py`
 
@@ -31,7 +31,7 @@ Make sure you have Redis running (it probably already is).
 
 ![Flash Sales w/ Websockets](https://i.leetfil.es/c8458b5f)
 
-### Steps
+#### Steps
 
   1. Customer requests payment (index) page (`/`) and is assigned a UUID by the Flask server.
   2. Customer submits payment information via Stripe.js to `/v1/tokens` and receives a payment token (eg. `tok_xxx`).
