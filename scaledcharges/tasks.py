@@ -103,7 +103,8 @@ def process_result(result):
 
     idempotency_key = result.get('data', {}).get('idempotency_key')
 
-    time.sleep(10)
+    # uncomment this to play with delays
+    # time.sleep(10)
 
     if idempotency_key:
         LOGGER.info(json.dumps(result))
