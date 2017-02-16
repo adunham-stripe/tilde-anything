@@ -5,14 +5,21 @@
     <meta charset="utf-8">
     <title>Create a Charge</title>
     <link rel="stylesheet" type="text/css" href="/static/styles/checkout.css">
+    <link rel="stylesheet" type="text/css" href="/static/styles/cover.css">
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
     <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+    <script src="/static/js/toastr-config.js"></script>
     <script>
 
       Stripe.setPublishableKey('{{ STRIPE_PUBLISHABLE_KEY }}');
 
       $(document).ready(function(){
+
+        // Payment attempt
+        var payment_attempt = 0;
 
         // Connect to generalized context
         var socket = io();
@@ -28,22 +35,33 @@
         });
 
         socket.on('res', function(msg) {
-          console.log(msg);
+
+          $('#cover').show();
+          $('.loading-modal').hide();
+
           if (msg.success) {
-            console.log('Successful charge!');
-            console.log(msg.data.charge_id);
+            $('.loading-modal.successful').show();
           } else {
-            console.log('Failed charge!');
+            $('.loading-modal.failed').show();
+            toastr["error"](msg.message);
+            setTimeout(function () {
+              $('#cover').hide();
+              $('.loading-modal').hide();
+            }, 3000);
           }
+
         });
 
         $('.checkout').on('submit', function (e) {
           e.preventDefault();
+
+          $('#cover').show();
+          $('.loading-modal').hide();
+          $('.loading-modal.processing').show();
+
           $form = $(this);
           Stripe.card.createToken($form, function(status, response) {
             if (!response.error) {
-
-              console.log('Creating a charge!');
 
               var token = response.id;
               var email = $('input[name="email"]').first().val();
@@ -54,16 +72,20 @@
                 amount: {{ amount }},
                 idempotency_key: '{{ uuid }}',
                 email: email,
-                name: name
+                name: name,
+                payment_attempt: payment_attempt
               }
-
-              console.log(data);
 
               $.post('/charge', data);
 
-              console.log('Finished that step!');
+            } else {
+
+              toastr["error"]('Tokenization has failed...');
 
             }
+
+            payment_attempt++;
+
           });
         });
 
@@ -73,6 +95,12 @@
   </head>
   <body>
 
+    <div id="cover"></div>
+    <div class="loading-modal processing">Processing payment...</div>
+    <div class="loading-modal successful">Payment was successful!</div>
+    <div class="loading-modal failed">Payment has failed!</div>
+
+    <div class="form-container">
     <form class="checkout" action="/charge" method="POST">
       <div class="checkout-header">
         <h1 class="checkout-title">
@@ -97,6 +125,6 @@
       <input type="hidden" name="uuid" value="{{ uuid }}">
       <input type="hidden" name="amount" value="{{ amount }}">
     </form>
-
+    </div>
   </body>
 </html>

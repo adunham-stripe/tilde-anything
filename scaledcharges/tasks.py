@@ -27,7 +27,7 @@ LOGGER = get_task_logger(__name__)
 
 
 @celery_app.task(bind=True, default_retry_delay=2, retry_kwargs={'attempt': 1})
-def create_charge(self, token, amount, idempotency_key, name, email):
+def create_charge(self, token, amount, idempotency_key, name, email, payment_attempt):
 
     LOGGER.info('[t: {}][i: {}] Creating charge...'.format(
         token, idempotency_key
@@ -53,7 +53,7 @@ def create_charge(self, token, amount, idempotency_key, name, email):
             source=token,
             amount=amount,
             currency="usd",
-            idempotency_key=idempotency_key,
+            idempotency_key=idempotency_key + '-' + str(payment_attempt),
             description="Charge for {0} <{1}>".format(name, email),
         )
 
@@ -104,7 +104,7 @@ def process_result(result):
     idempotency_key = result.get('data', {}).get('idempotency_key')
 
     # uncomment this to play with delays
-    # time.sleep(10)
+    time.sleep(10)
 
     if idempotency_key:
         LOGGER.info(json.dumps(result))

@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto+Slab:700');
+
+.form-container {
+  position: absolute;
+  top: 0; left: 0;
+  padding-top: 33vh;
+  width: 100%;
+  height: 100%;
+}
+
+#cover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: rgba(255,255,255,0.7);
+  z-index: 90;
+  width: 100%; height: 100%;
+  display: none;
+}
+
+.loading-modal {
+  font-size: 4em;
+  font-weight: bold;
+  font-family: 'Roboto Slab', serif;
+  padding-top: 25px;
+  padding-bottom: 25px;
+  margin-left: auto;
+  margin-right: auto;
+  align: center;
+  text-align: center;
+  vertical-align: middle;
+  text-shadow: -2px 0 #fff, 0 2px #fff, 2px 0 #fff, 0 -2px #fff;
+  z-index: 100;
+  width: 100%;
+  height: 256px;
+  position: relative;
+  margin-top: 33vh;
+  display: none;
+  line-height: 256px;
+  background-color: rgba(255,255,255,0.7);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.loading-modal.processing {
+  background-image: url('/static/img/loading.gif');
+}
+
+.loading-modal.successful {
+  background-image: url('/static/img/success.png');
+}
+
+.loading-modal.failed {
+  background-image: url('/static/img/fail.png');
+}

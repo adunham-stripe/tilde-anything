@@ -61,6 +61,7 @@ def notify():
     sio.emit('res', data, room=idempotency_key)
     return "OK"
 
+
 @sio.on('connect')
 def test_connect():
     emit('message', {'data': 'Client has connected.'})
