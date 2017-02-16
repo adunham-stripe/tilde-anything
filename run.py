@@ -1,4 +1,4 @@
-from scaledcharges import app
+from scaledcharges import sio, app
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    sio.run(app, debug=True)

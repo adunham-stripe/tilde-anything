@@ -1,6 +1,8 @@
 import os
 import stripe
 import json
+import requests
+import time
 from celery import Celery
 from celery.utils.log import get_task_logger
 from flask_socketio import SocketIO, emit
@@ -9,7 +11,8 @@ CELERY_QUEUE = os.environ.get('BROKER_URL', 'redis://localhost:6379/0')
 MESSAGE_QUEUE = os.environ.get('MESSAGE_QUEUE', 'redis://localhost:6379/1')
 
 # Setup Stripe
-stripe.api_key = os.environ.get('STRIPE_SECRET')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+stripe.api_key = STRIPE_SECRET_KEY
 
 # Setup Celery
 
@@ -77,7 +80,7 @@ def create_charge(self, token, amount, idempotency_key, name, email):
             raise self.retry(exc=e, countdown=attempt, attempt=attempt + 1)
 
         result.update({
-            'message': 'Maximum number of retries exceeded.  Failed.'
+            'message': e.message
         })
 
     except stripe.error.CardError as e:
@@ -90,7 +93,7 @@ def create_charge(self, token, amount, idempotency_key, name, email):
         # Any other error
         result.update({'message': str(e)})
 
-    process_result.apply_async(args=(result))
+    process_result.delay(result)
 
     return True
 
@@ -98,17 +101,16 @@ def create_charge(self, token, amount, idempotency_key, name, email):
 @celery_app.task
 def process_result(result):
 
-    sio = SocketIO(message_queue=MESSAGE_QUEUE)
     idempotency_key = result.get('data', {}).get('idempotency_key')
 
+    time.sleep(10)
+
     if idempotency_key:
-        sio.emit(
-            'charge_complete',
-            {
-                'data': json.dumps(result)
-            },
-            namespace='/' + idempotency_key
-        )
+        LOGGER.info(json.dumps(result))
+        url = 'http://localhost:5000/notify'
+        headers = {'content-type': 'application/json'}
+
+        response = requests.post(url, data=json.dumps(result), headers=headers)
         return True
 
     return False

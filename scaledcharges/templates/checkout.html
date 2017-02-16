@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% set amount = amount or 9599 %}
 <html>
   <head>
     <meta charset="utf-8">
@@ -7,10 +8,70 @@
     <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <script>
+
+      Stripe.setPublishableKey('{{ STRIPE_PUBLISHABLE_KEY }}');
+
+      $(document).ready(function(){
+
+        // Connect to generalized context
+        var socket = io();
+
+        socket.on('connect', function() {
+          socket.emit('join', { room: '{{ uuid }}' });
+          socket.emit('message', { data: 'Connected, thanks!', room: '{{ uuid }}' });
+          console.log('Connected.');
+        });
+
+        socket.on('message', function(msg) {
+          console.log('Received: ' + msg.data);
+        });
+
+        socket.on('res', function(msg) {
+          console.log(msg);
+          if (msg.success) {
+            console.log('Successful charge!');
+            console.log(msg.data.charge_id);
+          } else {
+            console.log('Failed charge!');
+          }
+        });
+
+        $('.checkout').on('submit', function (e) {
+          e.preventDefault();
+          $form = $(this);
+          Stripe.card.createToken($form, function(status, response) {
+            if (!response.error) {
+
+              console.log('Creating a charge!');
+
+              var token = response.id;
+              var email = $('input[name="email"]').first().val();
+              var name = $('input[name="name"]').first().val();
+
+              data = {
+                token: token,
+                amount: {{ amount }},
+                idempotency_key: '{{ uuid }}',
+                email: email,
+                name: name
+              }
+
+              console.log(data);
+
+              $.post('/charge', data);
+
+              console.log('Finished that step!');
+
+            }
+          });
+        });
+
+      });
+
+    </script>
   </head>
   <body>
-
-    {% set amount = amount or 9599 %}
 
     <form class="checkout" action="/charge" method="POST">
       <div class="checkout-header">
@@ -19,22 +80,23 @@
         </h1>
       </div>
       <p>
-        <input type="text" class="checkout-input checkout-email" placeholder="me@email.com" name="email" autofocus>
+        <input type="text" class="checkout-input checkout-email" data-stripe="email" placeholder="me@email.com" name="email" autofocus>
       </p>
       <p>
-        <input type="text" class="checkout-input checkout-name" placeholder="Your name" name="name">
-        <input type="text" class="checkout-input checkout-exp" placeholder="MM">
-        <input type="text" class="checkout-input checkout-exp" placeholder="YY">
+        <input type="text" class="checkout-input checkout-name" data-stripe="name" placeholder="Your name" name="name">
+        <input type="text" class="checkout-input checkout-exp" data-stripe="exp_month" placeholder="MM">
+        <input type="text" class="checkout-input checkout-exp" data-stripe="exp_year" placeholder="YY">
       </p>
       <p>
-        <input type="text" class="checkout-input checkout-card" placeholder="4111 1111 1111 1111">
-        <input type="text" class="checkout-input checkout-cvc" placeholder="CVC">
+        <input type="text" class="checkout-input checkout-card" data-stripe="number" placeholder="4111 1111 1111 1111">
+        <input type="text" class="checkout-input checkout-cvc" data-stripe="cvc" placeholder="CVC">
       </p>
       <p>
-        <input type="submit" value="Pay ${{ '{0:0.2f}'.format(amount/100.0) }} USD" class="checkout-btn">
+        <button type="submit" value="Pay ${{ '{0:0.2f}'.format(amount/100.0) }} USD" class="checkout-btn">Submit</button>
       </p>
       <input type="hidden" name="uuid" value="{{ uuid }}">
       <input type="hidden" name="amount" value="{{ amount }}">
     </form>
+
   </body>
 </html>
